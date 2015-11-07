@@ -43,15 +43,10 @@ nosetests.xml
 coverage.xml
 *,cover
 
-# Translations
-*.mo
-*.pot
+# IDE
+.project
+.pydevproject
+.settings/
 
-# Django stuff:
-*.log
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
+# Virtual environment
+.pyenv/
