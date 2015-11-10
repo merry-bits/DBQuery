@@ -53,7 +53,7 @@ class PostgresTestCase(TestCase):
         """
         super().setUp()
         # Set up the connection.
-        self.db = PostgresDB(getenv(_DBACCESS_TEST_PSQL))
+        self.db = PostgresDB(getenv(_DBACCESS_TEST_PSQL), retry=3)
         # Drop schema if it exists and create an empty one.
         self.db.Manipulation(
             "DROP SCHEMA IF EXISTS {} CASCADE".format(_TEST_SCHEMA))()

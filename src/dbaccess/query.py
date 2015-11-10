@@ -51,8 +51,7 @@ class Query():
         self._sql = sql  # save the SQL for later execution
         # The following variables will be filled in when a connection is
         # obtained by accessing the connection property.
-        self.InternalError = db.InternalError
-        self.IntegrityError = db.IntegrityError
+        self.OperationalError = db.OperationalError
         self._connection = None
 
     def _produce_return(self, cursor):
@@ -90,7 +89,7 @@ class Query():
                 # Execute and return.
                 return self._db.execute(
                     self._sql, params, self._produce_return)
-            except self._db.InternalError:
+            except self._db.OperationalError:
                 # Usually means a connection problem, log and try to connect
                 # again.
                 if retry_count < self._db.retry:

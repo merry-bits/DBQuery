@@ -165,7 +165,7 @@ class QueryTest(TestCase):
         retry in Query works as expected.
         """
         self.db.set_raise_on_exec()
-        with self.assertRaises(self.db.InternalError):
+        with self.assertRaises(self.db.OperationalError):
             with patch("dbaccess.query._LOG"):  # hide log
                 self.db.Query("")()
         self.assertEqual(self.db.execute_calls, _RETRY)
