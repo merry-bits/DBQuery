@@ -51,7 +51,7 @@ class PostgresTestCase(TestCase):
         This of course tests if a connection can be established and if
         Manipulation works on the connections...
         """
-        super().setUp()
+        super(PostgresTestCase, self).setUp()
         # Set up the connection.
         self.db = PostgresDB(getenv(_DBACCESS_TEST_PSQL), retry=3)
         # Drop schema if it exists and create an empty one.
@@ -64,7 +64,7 @@ class PostgresTestCase(TestCase):
                 _TEST_SCHEMA))()
 
     def tearDown(self):
-        super().tearDown()
+        super(PostgresTestCase, self).tearDown()
         self.db.Manipulation(
             "DROP SCHEMA IF EXISTS {} CASCADE".format(_TEST_SCHEMA))()
         self.db.close()

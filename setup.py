@@ -11,7 +11,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="DBaccess",
-    version="0.3.0",
+    version="0.3.0.dev1",
     description="Simplify your database access.",
     long_description=long_description,
     url="https://github.com/merry-bits/DBaccess",

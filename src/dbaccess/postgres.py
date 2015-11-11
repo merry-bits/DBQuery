@@ -10,7 +10,8 @@ from .query import SelectOne
 class _NextVal(SelectOne):
 
     def __init__(self, db, sequence):
-        super().__init__(db, 'SELECT nextval(\'{}\')'.format(sequence), None)
+        super(_NextVal, self).__init__(
+            db, 'SELECT nextval(\'{}\')'.format(sequence), None)
 
 
 class PostgresDB(DB):
@@ -28,7 +29,7 @@ class PostgresDB(DB):
     OperationalError = PGOperationalError
 
     def __init__(self, dsn=None, retry=0, **kwds):
-        super().__init__(retry=retry)
+        super(PostgresDB, self).__init__(retry=retry)
         self._kwds = kwds or {}
         if dsn:
             self._kwds["dsn"] = dsn

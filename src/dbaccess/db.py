@@ -23,7 +23,7 @@ class DBContextManagerError(Exception):
     """
 
 
-class DB():
+class DB(object):
     """ Database class that knows how to talk to the database.
 
     Used by all the Query classes to execute SQL.

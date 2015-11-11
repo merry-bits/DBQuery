@@ -35,7 +35,7 @@ def to_dict_formatter(row, cursor):
     return {name: value for value, name in zip(row, column_names)}
 
 
-class Query():
+class Query(object):
     """ Base class for other SQL query classes.
 
     Only use Query directly if you need access to the DB-API cursor.
@@ -137,7 +137,7 @@ class Select(Query):
             implement your own.
         :type row_formatter: function(tuple, Select) -> tuple
         """
-        super().__init__(db, sql)
+        super(Select, self).__init__(db, sql)
         self._row_formatter = row_formatter
 
     def _produce_return(self, cursor):
@@ -196,7 +196,7 @@ class Manipulation(Query):
             check should be performed
         :type rowcount: int
         """
-        super().__init__(db, sql)
+        super(Manipulation, self).__init__(db, sql)
         self._rowcount = rowcount
 
     def _produce_return(self, cursor):

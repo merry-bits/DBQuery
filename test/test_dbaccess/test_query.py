@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-from logging import getLogger
 from unittest.case import TestCase
-from unittest.mock import patch
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
 
 from dbaccess import ManipulationCheckError, to_dict_formatter
 from dbaccess.db import DB as DBBase
@@ -18,7 +20,7 @@ class DB(DBBase):
     """
 
     def __init__(self):
-        super().__init__(_RETRY)
+        super(DB, self).__init__(_RETRY)
         self._raise_on_exec = False
         self._exec_cursor = None
         self.execute_calls = 0

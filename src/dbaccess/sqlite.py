@@ -17,7 +17,7 @@ class SQLiteDB(DB):
     OperationalError = SQL3OperationalError
 
     def __init__(self, database, retry=0, **kwds):
-        super().__init__(retry=retry)
+        super(SQLiteDB, self).__init__(retry=retry)
         self._database = database
         self._kwds = kwds
         self._connection = None
