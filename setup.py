@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
-# To use a consistent encoding
 from codecs import open
 from os import path
 
@@ -27,6 +26,8 @@ setup(
         "Programming Language :: Python :: 3.5",
     ],
     keywords="easy database access SQLite PostgreSQL wrap SQL connection",
+    packages=find_packages("src"),
+    package_dir = {"": "src"},
     install_requires=[],
     # $ pip install -e .[postgres,test]
     extras_require={
