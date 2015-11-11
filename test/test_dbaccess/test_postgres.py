@@ -17,7 +17,7 @@ from os import getenv
 from dbaccess.postgres import PostgresDB
 
 
-_TEST_SCHEMA = "dbaccess_test"
+_TEST_SCHEMA = getenv("DBACCESS_TEST_PSQL_SCHEMA", "dbaccess_test")
 
 _DBACCESS_TEST_PSQL = "DBACCESS_TEST_PSQL"
 
