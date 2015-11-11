@@ -3,7 +3,7 @@ addons:
 services:
   - postgresql
 before_script:
-  - psql -c 'create database travis_ci_test;' -U postgres
+  - psql -c 'create database travis_ci_test;create schema dbaccess_test;' -U postgres
 language: python
 python:
   - "2.7"
