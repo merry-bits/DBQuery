@@ -1,4 +1,4 @@
-# dbaccess
+# DBaccess
 
 Simplify your database access.
 
