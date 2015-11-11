@@ -50,3 +50,4 @@ coverage.xml
 
 # Virtual environment
 .pyenv/
+.pyenv2.7/
