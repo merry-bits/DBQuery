@@ -15,9 +15,13 @@ from unittest import TestCase, skipUnless
 from os import getenv
 
 from dbaccess.postgres import PostgresDB
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 
-_TEST_SCHEMA = getenv("DBACCESS_TEST_PSQL_SCHEMA", "dbaccess_test")
+_TEST_SCHEMA = "dbaccess_test"
 
 _DBACCESS_TEST_PSQL = "DBACCESS_TEST_PSQL"
 
@@ -52,16 +56,18 @@ class PostgresTestCase(TestCase):
         Manipulation works on the connections...
         """
         super(PostgresTestCase, self).setUp()
+        test_dsn = getenv(_DBACCESS_TEST_PSQL)
         # Set up the connection.
-        self.db = PostgresDB(getenv(_DBACCESS_TEST_PSQL), retry=3)
+        self.db = PostgresDB(test_dsn, retry=3)
         # Drop schema if it exists and create an empty one.
         self.db.Manipulation(
             "DROP SCHEMA IF EXISTS {} CASCADE".format(_TEST_SCHEMA))()
         # Create schema and set it as default.
+        username = urlparse(test_dsn).username
         self.db.Manipulation("CREATE SCHEMA {}".format(_TEST_SCHEMA))()
         self.db.Manipulation(
-            "ALTER USER dbaccess_test SET search_path TO {}".format(
-                _TEST_SCHEMA))()
+            "ALTER USER {} SET search_path TO {}".format(
+                username, _TEST_SCHEMA))()
 
     def tearDown(self):
         super(PostgresTestCase, self).tearDown()
