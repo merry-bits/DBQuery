@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from unittest.case import TestCase
+from unittest import TestCase
 
-from dbaccess import DBContextManagerError
-from dbaccess.db import DB as DBBase
+from dbquery import DBContextManagerError
+from dbquery.db import DB as DBBase
 
 
 _TEST_PARAM = "test_param"
@@ -15,7 +15,7 @@ class DB(DBBase):
     """
 
     def __init__(self, call_super=False):
-        super().__init__(0)
+        super(DB, self).__init__(0)
         self.begin_calls = 0
         self.commit_calls = 0
         self.rollback_calls = 0
@@ -25,22 +25,22 @@ class DB(DBBase):
     def _begin(self):
         self.begin_calls += 1
         if self._call_super:
-            super()._begin()
+            super(DB, self)._begin()
 
     def _commit(self):
         self.commit_calls += 1
         if self._call_super:
-            super()._commit()
+            super(DB, self)._commit()
 
     def _rollback(self):
         self.rollback_calls += 1
         if self._call_super:
-            super()._rollback()
+            super(DB, self)._rollback()
 
     def close(self):
         self.close_calls += 1
         if self._call_super:
-            super().close()
+            super(DB, self).close()
 
 
 class TestConnection(TestCase):

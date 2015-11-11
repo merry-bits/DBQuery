@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-from sqlite3 import InternalError as SL3InternalError
-from sqlite3 import IntegrityError as SL3IntegrityError
-from sqlite3 import connect
+from sqlite3 import connect, OperationalError as SQL3OperationalError
 
 from .db import DB
 
@@ -16,12 +14,10 @@ class SQLiteDB(DB):
     No support for read_obj.
     """
 
-    InternalError = SL3InternalError
+    OperationalError = SQL3OperationalError
 
-    IntegrityError = SL3IntegrityError
-
-    def __init__(self, database, **kwds):
-        super().__init__(**kwds)
+    def __init__(self, database, retry=0, **kwds):
+        super(SQLiteDB, self).__init__(retry=retry)
         self._database = database
         self._kwds = kwds
         self._connection = None

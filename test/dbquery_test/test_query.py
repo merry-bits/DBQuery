@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-from logging import getLogger
 from unittest.case import TestCase
-from unittest.mock import patch
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
 
-from dbaccess import ManipulationCheckError, to_dict_formatter
-from dbaccess.db import DB as DBBase
+from dbquery import ManipulationCheckError, to_dict_formatter
+from dbquery.db import DB as DBBase
 
 
 _RETRY = 2
@@ -18,7 +20,7 @@ class DB(DBBase):
     """
 
     def __init__(self):
-        super().__init__(_RETRY)
+        super(DB, self).__init__(_RETRY)
         self._raise_on_exec = False
         self._exec_cursor = None
         self.execute_calls = 0
@@ -123,7 +125,7 @@ class QueryTest(TestCase):
         """
         sql_text = "some sql"
         params_list = (1, 2)
-        with patch('dbaccess.query.Query._produce_return') as produce_return:
+        with patch('dbquery.query.Query._produce_return') as produce_return:
             q = self.db.Query(sql_text)
             q(*params_list)
             ((sql, params), ), _ = produce_return.call_args
@@ -135,7 +137,7 @@ class QueryTest(TestCase):
         """
         sql_text = "some sql"
         params_list = {"a": 1}
-        with patch('dbaccess.query.Query._produce_return') as produce_return:
+        with patch('dbquery.query.Query._produce_return') as produce_return:
             q = self.db.Query(sql_text)
             q(**params_list)
             ((_, params), ), _ = produce_return.call_args
@@ -165,8 +167,8 @@ class QueryTest(TestCase):
         retry in Query works as expected.
         """
         self.db.set_raise_on_exec()
-        with self.assertRaises(self.db.InternalError):
-            with patch("dbaccess.query._LOG"):  # hide log
+        with self.assertRaises(self.db.OperationalError):
+            with patch("dbquery.query._LOG"):  # hide log
                 self.db.Query("")()
         self.assertEqual(self.db.execute_calls, _RETRY)
 
@@ -282,5 +284,5 @@ class ManipulationTest(TestCase):
         # This should.
         m = self.db.Manipulation("", rowcount=2)
         with self.assertRaises(ManipulationCheckError):
-            with patch("dbaccess.query._LOG"):  # hide log
+            with patch("dbquery.query._LOG"):  # hide log
                 m()

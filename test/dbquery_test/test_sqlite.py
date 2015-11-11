@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest import TestCase
 
-from dbaccess import SQLiteDB
+from dbquery import SQLiteDB
 
 
 class _CloseErrorConnection():

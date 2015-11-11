@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from psycopg2 import connect, InternalError as PE1, IntegrityError as PE2
+from psycopg2 import connect, OperationalError as PGOperationalError
 from psycopg2.extensions import ISOLATION_LEVEL_READ_COMMITTED, \
     ISOLATION_LEVEL_AUTOCOMMIT
 
@@ -10,7 +10,8 @@ from .query import SelectOne
 class _NextVal(SelectOne):
 
     def __init__(self, db, sequence):
-        super().__init__(db, 'SELECT nextval(\'{}\')'.format(sequence), None)
+        super(_NextVal, self).__init__(
+            db, 'SELECT nextval(\'{}\')'.format(sequence), None)
 
 
 class PostgresDB(DB):
@@ -25,12 +26,10 @@ class PostgresDB(DB):
         port – connection port number (defaults to 5432 if not provided)
     """
 
-    InternalError = PE1
+    OperationalError = PGOperationalError
 
-    IntegrityError = PE2
-
-    def __init__(self, dsn=None, **kwds):
-        super().__init__(**kwds)
+    def __init__(self, dsn=None, retry=0, **kwds):
+        super(PostgresDB, self).__init__(retry=retry)
         self._kwds = kwds or {}
         if dsn:
             self._kwds["dsn"] = dsn

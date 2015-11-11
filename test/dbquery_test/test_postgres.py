@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Enable the PostgreSQL tests by setting the environment variable in
-_DBACCESS_TEST_PSQL to '1'.
-
-An additional cursor test (iteration over big data) can be enabled by setting
-the environment variable from _DBACCESS_TEST_PSQL_ITER to desired amount of
-rows to test (1000 is recommended).
+_DBQUERY_POSTGRES_TEST to the Postgres DSN to be used.
 
 Prepare a PostgreSQL test database:
   =# CREATE ROLE <user> LOGIN PASSWORD '<password>';
@@ -14,31 +10,20 @@ Prepare a PostgreSQL test database:
 from unittest import TestCase, skipUnless
 from os import getenv
 
-from dbaccess.postgres import PostgresDB
+from dbquery.postgres import PostgresDB
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 
-_TEST_SCHEMA = "dbaccess_test"
+_TEST_SCHEMA = "dbquery_test"
 
-_DBACCESS_TEST_PSQL = "DBACCESS_TEST_PSQL"
-
-# def _get_configuration():
-#     configuration = {
-#         'connection_module': 'dbaccess.postgres'
-#     }
-#     host = environ.get(_DBACCESS_TEST_PSQL_HOST, None)
-#     if host is not None:
-#         configuration['host'] = host
-#     port = environ.get(_DBACCESS_TEST_PSQL_PORT, None)
-#     if port is not None:
-#         configuration['port'] = int(port)
-#     configuration['database'] = environ.get(_DBACCESS_TEST_PSQL_DATABASE)
-#     configuration['user'] = environ.get(_DBACCESS_TEST_PSQL_USER)
-#     configuration['password'] = environ.get(_DBACCESS_TEST_PSQL_PASSWORD)
-#     return configuration
+_DBQUERY_POSTGRES_TEST = "DBQUERY_POSTGRES_TEST"
 
 
 @skipUnless(
-    getenv(_DBACCESS_TEST_PSQL), 'PostgerSQL connection tests not enabled.')
+    getenv(_DBQUERY_POSTGRES_TEST), 'PostgerSQL connection tests not enabled.')
 class PostgresTestCase(TestCase):
     """ Adds the PostgreSQL connection to the TestCase class in the setUp
     method and clears up the DB in tearDown.
@@ -51,20 +36,22 @@ class PostgresTestCase(TestCase):
         This of course tests if a connection can be established and if
         Manipulation works on the connections...
         """
-        super().setUp()
+        super(PostgresTestCase, self).setUp()
+        test_dsn = getenv(_DBQUERY_POSTGRES_TEST)
         # Set up the connection.
-        self.db = PostgresDB(getenv(_DBACCESS_TEST_PSQL))
+        self.db = PostgresDB(test_dsn, retry=3)
         # Drop schema if it exists and create an empty one.
         self.db.Manipulation(
             "DROP SCHEMA IF EXISTS {} CASCADE".format(_TEST_SCHEMA))()
         # Create schema and set it as default.
+        username = urlparse(test_dsn).username
         self.db.Manipulation("CREATE SCHEMA {}".format(_TEST_SCHEMA))()
         self.db.Manipulation(
-            "ALTER USER dbaccess_test SET search_path TO {}".format(
-                _TEST_SCHEMA))()
+            "ALTER USER {} SET search_path TO {}".format(
+                username, _TEST_SCHEMA))()
 
     def tearDown(self):
-        super().tearDown()
+        super(PostgresTestCase, self).tearDown()
         self.db.Manipulation(
             "DROP SCHEMA IF EXISTS {} CASCADE".format(_TEST_SCHEMA))()
         self.db.close()
@@ -73,11 +60,11 @@ class PostgresTestCase(TestCase):
 class PostgresTest(PostgresTestCase):
     """ Test Postgres connection class.
     This needs a running postgres server and expects a DSN string in the
-    DBACCESS_TEST_PSQL environment variable.
+    DBQUERY_POSTGRES_TEST environment variable.
     For example:
         postgres://user:password@localhost/test_db
 
-    The schema used by this test is: dbaccess_test
+    The schema used by this test is: dbquery_test
 
     If test schema will be dropped if it exists!
     The DB user needs permission to create and tear down the test schema and

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-DBAccess example., using SQLite.
+DBQuery example., using SQLite.
 
-Shows the use of set_configuration, Manipulation, Select and SelectOne.
+Shows the use of Manipulation, Select and SelectOne.
 """
 from random import randrange
 
-from dbaccess import SQLiteDB
+from dbquery import SQLiteDB
 
 
 if __name__ == '__main__':
@@ -26,9 +26,9 @@ if __name__ == '__main__':
         print('Inserted rows: ', row_count)
 
     # Create a Select which can read those values.
-    select_hello = db.Select('SELECT hello FROM world')
+    get_hello = db.Select('SELECT hello FROM world')
     # Print values.
-    for hello_value in select_hello():
+    for hello_value in get_hello():
         print(hello_value[0])
 
     # Count the rows.

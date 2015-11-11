@@ -23,18 +23,17 @@ class DBContextManagerError(Exception):
     """
 
 
-class DB():
+class DB(object):
     """ Database class that knows how to talk to the database.
 
-    Use by all the Query classes to execute SQL.
+    Used by all the Query classes to execute SQL.
 
     Inherit and implement to provide access to your database.
     """
 
-    InternalError = Exception
-    IntegrityError = Exception
+    OperationalError = Exception
 
-    def __init__(self, retry=0, **kwds):
+    def __init__(self, retry=0):
         self._retry = retry
         self._transaction_level = 0
 
