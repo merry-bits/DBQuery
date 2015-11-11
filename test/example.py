@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-DBAccess example., using SQLite.
+DBQuery example., using SQLite.
 
 Shows the use of Manipulation, Select and SelectOne.
 """
 from random import randrange
 
-from dbaccess import SQLiteDB
+from dbquery import SQLiteDB
 
 
 if __name__ == '__main__':

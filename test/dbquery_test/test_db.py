@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from unittest import TestCase
 
-from dbaccess import DBContextManagerError
-from dbaccess.db import DB as DBBase
+from dbquery import DBContextManagerError
+from dbquery.db import DB as DBBase
 
 
 _TEST_PARAM = "test_param"

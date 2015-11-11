@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest.case import TestCase
 
-from dbaccess.log_msg import LogMsg
+from dbquery.log_msg import LogMsg
 
 
 class TestLogMsg(TestCase):

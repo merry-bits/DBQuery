@@ -10,11 +10,11 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="DBaccess",
+    name="DBQuery",
     version="0.3.0.dev1",
     description="Simplify your database access.",
     long_description=long_description,
-    url="https://github.com/merry-bits/DBaccess",
+    url="https://github.com/merry-bits/DBQuery",
     author="merry-bits",
     author_email="merry-bits@users.noreply.github.com",
     license="GPLv2",
@@ -25,7 +25,8 @@ setup(
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Programming Language :: Python :: 3.5",
     ],
-    keywords="easy database access SQLite PostgreSQL wrap SQL connection",
+    keywords=(
+        "easy database access SQLite PostgreSQL wrap SQL connection query"),
     packages=find_packages("src"),
     package_dir = {"": "src"},
     install_requires=[],

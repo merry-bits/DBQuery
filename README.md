@@ -1,17 +1,17 @@
-# DBaccess
+# DBQuery
 
 Simplify your database access.
 
-A comfortable database configuration and access wrapper for the Python DB-API.
+A comfortable database configuration and query wrapper for the Python DB-API.
 
 
 ## Example
 
-Sample code for connectig to an existing SQLite database and
+Sample code for connecting to an existing SQLite database and
 printing some rows from a table named world:
 
 ```Python
-    from dbaccess import SQLiteDB
+    from dbquery import SQLiteDB
     
     db = SQLiteDB('<MY DATABASE>')
     get_hello = db.Select('SELECT hello FROM world WHERE id=?')
@@ -26,7 +26,7 @@ The example can be simplified by assuming that each SQL execution only returns
 exactly one row:
 
 ```Python
-    from dbaccess import SQLiteDB
+    from dbquery import SQLiteDB
     
     db = SQLiteDB('<MY DATABASE>')
     get_hello = db.SelectOne('SELECT hello FROM world WHERE id=?')
@@ -58,7 +58,7 @@ sure you call python from the same directory as where the database file is.
 # Documentation
 
 The [Python DB-API](https://www.python.org/dev/peps/pep-0249/) specifies
-connections and cursors for executing SQL. DBAccess is designed to hide this
+connections and cursors for executing SQL. DBQuery is designed to hide this
 complexity when it is not needed. Instead it provides a DB and a Query class
 for executing SQL. The DB (or one of its sub classes) save the connection
 information and provide access to the Query classes with use this to execute
@@ -72,7 +72,7 @@ This way a it is possible to handle SQL queries as callable functions:
     email, first_name = get_user(123)
 ```
 
-What is more, if the connection to a database gets lost DBAccess can
+What is more, if the connection to a database gets lost DBQuery can
 automatically try to reconnect up to a specified count of retries:
 ```python
     db = DB(configuration, retry=3)  # retry 3 time to reconnect
