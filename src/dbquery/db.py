@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
+from functools import wraps
 from logging import getLogger
 
 from .log_msg import LogMsg
 from .query import Query, Select, SelectOne, Manipulation
-from functools import wraps
 
 
 _LOG = getLogger(__name__)
