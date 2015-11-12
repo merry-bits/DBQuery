@@ -34,8 +34,12 @@ class DB(object):
     OperationalError = Exception
 
     def __init__(self, retry=0):
+        """
+        :param retry: How many attempts to connect to make before giving up.
+        """
         self._retry = retry
-        self._transaction_level = 0
+        self._orig_retry = None  # saves retry value during a transaction
+        self._transaction_level = 0  # counts nested contexts
 
     def Query(self, sql):
         return Query(self, sql)
@@ -91,6 +95,12 @@ class DB(object):
         # On first context level start the DB transaction.
         if self._transaction_level == 0:
             self._begin()
+            # Save retry value and set it to 0. If a connection fails during a
+            # transaction then that error needs to end the transaction. Usually
+            # a transaction can not be continued on a different (new)
+            # connection!
+            self._orig_retry = self._retry
+            self._retry = 0
             _LOG.debug(LogMsg("BEGIN on {}.", self))
 
         # Count the new context.
@@ -123,6 +133,9 @@ class DB(object):
             else:
                 self._commit()
                 _LOG.debug(LogMsg("COMMIT on {}.", self))
+            # Restore retry value.
+            self._retry = self._orig_retry
+            self._orig_retry = None
 
         # Do not propagate any exception if:
         # - there was no exception

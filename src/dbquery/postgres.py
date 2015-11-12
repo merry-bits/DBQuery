@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 from psycopg2 import connect, OperationalError as PGOperationalError
-from psycopg2.extensions import ISOLATION_LEVEL_READ_COMMITTED, \
-    ISOLATION_LEVEL_AUTOCOMMIT
 
 from .db import DB
 from .query import SelectOne
@@ -17,7 +15,7 @@ class _NextVal(SelectOne):
 class PostgresDB(DB):
     """ PostgreSQL DB class using a single psycopg2 connection.
 
-    Use either a 'dns' connection string or keyword parameter to define the
+    Use either a 'dsn' connection string or keyword parameter to define the
     connection (from the psycopg2 documentation):
         database – the database name (only as keyword argument)
         user – user name used to authenticate
@@ -39,7 +37,7 @@ class PostgresDB(DB):
         if self._connection is not None:
             raise RuntimeError("Connection still exists.")
         self._connection = connect(**self._kwds)
-        self._connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        self._connection.set_session(autocommit=True)
 
     def close(self):
         if self._connection is not None:
@@ -67,16 +65,16 @@ class PostgresDB(DB):
 
     @DB.connected
     def _begin(self):
-        self._connection.set_isolation_level(ISOLATION_LEVEL_READ_COMMITTED)
+        self._connection.autocommit = False
 
     def _commit(self):
         if self._connection is None:
             raise RuntimeError("Connection lost, can not commit!")
         self._connection.commit()
-        self._connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        self._connection.autocommit = True
 
     def _rollback(self):
         if self._connection is None:
             raise RuntimeError("Connection lost, can not roll back!")
         self._connection.rollback()
-        self._connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        self._connection.autocommit = True

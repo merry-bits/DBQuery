@@ -11,10 +11,6 @@ from unittest import TestCase, skipUnless
 from os import getenv
 
 from dbquery.postgres import PostgresDB
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
 
 
 _TEST_SCHEMA = "dbquery_test"
@@ -44,11 +40,8 @@ class PostgresTestCase(TestCase):
         self.db.Manipulation(
             "DROP SCHEMA IF EXISTS {} CASCADE".format(_TEST_SCHEMA))()
         # Create schema and set it as default.
-        username = urlparse(test_dsn).username
         self.db.Manipulation("CREATE SCHEMA {}".format(_TEST_SCHEMA))()
-        self.db.Manipulation(
-            "ALTER USER {} SET search_path TO {}".format(
-                username, _TEST_SCHEMA))()
+        self.db.Manipulation("SET search_path TO {}".format(_TEST_SCHEMA))()
 
     def tearDown(self):
         super(PostgresTestCase, self).tearDown()
@@ -93,17 +86,16 @@ class PostgresTest(PostgresTestCase):
     def test_show_args(self):
         """ Test show SQL, with arguments.
         """
-        test_sql = "SELECT * FROM %s"
-        test_sql_formated = "SELECT * FROM \'test\'"
-        self.assertEqual(self.db.show(test_sql,  ["test"]), test_sql_formated)
+        test_sql = "SELECT * FROM WHERE id=%s"
+        test_value = "test_value"
+        self.assertIn(test_value, self.db.show(test_sql,  [test_value]))
 
     def test_show_kwds(self):
         """ Test show SQL, with arguments.
         """
-        test_sql = "SELECT * FROM %(test)s"
-        test_sql_formated = "SELECT * FROM \'test\'"
-        self.assertEqual(
-            self.db.show(test_sql, {"test": "test"}), test_sql_formated)
+        test_sql = "SELECT * FROM test WHERE id=%(test)s"
+        test_value = "test_value"
+        self.assertIn(test_value, self.db.show(test_sql, {"test": test_value}))
 
     def test_closed_commit(self):
         """ A commit on a closed connection should throw an error.
