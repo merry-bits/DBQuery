@@ -47,8 +47,8 @@ class DB(object):
     def Select(self, sql, row_formatter=None):
         return Select(self, sql, row_formatter)
 
-    def SelectOne(self, sql):
-        return SelectOne(self, sql, None)
+    def SelectOne(self, sql, row_formatter=None):
+        return SelectOne(self, sql, row_formatter)
 
     def Manipulation(self, sql, rowcount=None):
         return Manipulation(self, sql, rowcount)

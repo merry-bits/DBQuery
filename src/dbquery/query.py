@@ -171,7 +171,9 @@ class SelectOne(Select):
 
         # Return the one row, or the one column.
         row = results[0]
-        if len(row) == 1:
+        if self._row_formatter is not None:
+            row = self._row_formatter(row, cursor)
+        elif len(row) == 1:
             row = row[0]
 
         return row
