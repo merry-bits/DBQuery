@@ -11,7 +11,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="DBQuery",
-    version="0.3.0.dev2",
+    version="v0.3.0",
     description="Simplify your database access.",
     long_description=long_description,
     url="https://github.com/merry-bits/DBQuery",
@@ -19,10 +19,13 @@ setup(
     author_email="merry-bits@users.noreply.github.com",
     license="GPLv2",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Topic :: Database :: Front-Ends",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
     ],
     keywords=(
