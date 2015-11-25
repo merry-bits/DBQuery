@@ -32,6 +32,6 @@ setup(
     install_requires=[],
     # $ pip install -e .[postgres,test]
     extras_require={
-        "postgres": ["psycopg2"],
+        "postgres": ["psycopg2>=2.4.2"],
     },
 )
