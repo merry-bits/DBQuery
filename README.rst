@@ -15,6 +15,7 @@ printing some rows from a table named world:
 
 .. code-block:: python
 
+    >>> import dbquery
     >>> db = dbquery.SQLiteDB('test.db')
     >>> get_hello = db.Select('SELECT hello FROM world WHERE id=?')
     >>> for hello_id in (123, 456):
@@ -56,6 +57,14 @@ Supported databases
 * SQLite
 * PostgreSQL (requires the presence of
   `Psycopg2 <http://initd.org/psycopg/>`_)
+
+
+Installation
+============
+
+.. code-block:: bash
+
+    $ pip install dbquery
 
 
 Documentation
