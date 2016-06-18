@@ -1,4 +1,4 @@
-DBQuery: make database queries easy
+DBQuery: makes database queries easy
 ===================================
 
 .. image:: https://api.travis-ci.org/merry-bits/DBQuery.svg?branch=master
@@ -72,9 +72,10 @@ This way a it is possible work with SQL queries as if they where functions:
 
 .. code-block:: python
 
-    >>> db = dbquery.db.DB(<CONFIGURATION>)
+    >>> import dbquery
+    >>> db = dbquery.SQLiteDB(":memory")  # or whatever your database is
     >>> get_user = db.SelectOne(
-    ...    "Select email, first_name FROM users WHERE user_id=?")
+    ...    "SELECT email, first_name FROM users WHERE user_id=?")
     >>> email, first_name = get_user(123)
 
 What is more, if the connection to a database gets lost DBQuery can
@@ -84,6 +85,45 @@ automatically try to reconnect up to a specified count of retries:
 
     >>> db = dbquery.db.DB(configuration, retry=3)  # retry to connect 3 times
 
+**Note**: Per default a ``DB`` connection does not attempt any retry at all!
+
+
+The two ways of working with a ``DB`` object
+--------------------------------------------
+
+DBQuery allows for two different usage scenarios. The first one (as shown in
+the examples above) uses a global ``DB`` object:
+
+.. code-block:: python
+
+    >>> import dbquery
+    >>> db = dbquery.SQLiteDB(":memory")
+    >>> say_hello = db.SelectOne("select 'hello'")
+    >>> say_hello()
+    'hello'
+
+The other scenario works through injection and allows to define queries
+without a ``DB`` object. The configuration gets added at runtime. Assuming for
+example that ``handle_request`` is a function that should do something useful
+like handling a HTTP request then a query could be used like this:
+
+.. code-block:: python
+
+    >>> import dbquery
+    >>> # Define the query:
+    >>> say_hello_query = dbquery.SelectOne("select 'hello'")
+    >>> # Create a "resource" using DBMixin which will add any query to self
+    >>> # and inject the DB connection object.
+    >>> class HelloResource(dbquery.DBMixin):
+    ...   say_hello = say_hello_query  # make the query usable for an instance
+    ...   def handle_request(self, *request_parameters):
+    ...     print(self.say_hello())
+    ... 
+    >>> # Now create a resource instance, giving it a DB connection object and
+    >>> # "make" a request, executing the query:
+    >>> resource = HelloResource(db=dbquery.SQLiteDB(":memory"))
+    >>> resource.handle_request()
+    hello
 
 Configuration
 -------------
@@ -115,8 +155,24 @@ The DB instance acts as a context manager for starting a connection on
 entering the context and committing the queries in between in exit. If an
 exception happens a ``rollback`` call will be made instead.
 
-**Note**: ``SQLiteDB`` does not implement this feature.
+**Note**: ``SQLiteDB`` does not implement this feature, yet.
 
+Example:
+
+.. code-block:: python
+
+    >>> db = ...
+    >>> query1 = db.Manipulation("UPDATE world SET hello='HELLO'")
+    >>> query2 = db.Manipulation("UPDATE world SET hello='H E L L O'")
+    >>> with db as transaction:
+    ...   query1()
+    ...   query2()
+    ...   transaction.abort_transaction()
+    ...   print("not reached")
+    2
+    2
+    >>> get_one_hello(456)
+    'another hello'
 
 Query
 -----
@@ -165,4 +221,5 @@ value will be returned:
 
     >>> get_first_name = db.SelectOne(
     ...     "SELECT first_name FROM users where id=?")
-    >>> first_name = get_first_name(123) 
+    >>> first_name = get_first_name(123)
+

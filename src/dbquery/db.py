@@ -23,6 +23,39 @@ class DBContextManagerError(Exception):
     """
 
 
+class _DBMixin(object):
+
+    def __init__(self, db, *args, **kwds):
+        self._db = db
+        super(_DBMixin, self).__init__(*args, **kwds)
+
+    def __call__(self, *args, **kwds):
+        return super(_DBMixin, self).__call__(self._db, *args, **kwds)
+
+    def show(self, *args, **kwds):
+        return super(_DBMixin, self).show(self._db, *args, **kwds)
+
+
+class _Query(_DBMixin, Query):
+
+    pass
+
+
+class _Select(_DBMixin, Select):
+
+    pass
+
+
+class _SelectOne(_DBMixin, SelectOne):
+
+    pass
+
+
+class _Manipulation(_DBMixin, Manipulation):
+
+    pass
+
+
 class DB(object):
     """ Database class that knows how to talk to the database.
 
@@ -42,16 +75,16 @@ class DB(object):
         self._transaction_level = 0  # counts nested contexts
 
     def Query(self, sql):
-        return Query(self, sql)
+        return _Query(self, sql)
 
     def Select(self, sql, row_formatter=None):
-        return Select(self, sql, row_formatter)
+        return _Select(self, sql, row_formatter)
 
     def SelectOne(self, sql, row_formatter=None):
-        return SelectOne(self, sql, row_formatter)
+        return _SelectOne(self, sql, row_formatter)
 
     def Manipulation(self, sql, rowcount=None):
-        return Manipulation(self, sql, rowcount)
+        return _Manipulation(self, sql, rowcount)
 
     @property
     def retry(self):
@@ -163,3 +196,21 @@ class DB(object):
             return f(self, *args, **kwds)
 
         return new_f
+
+
+class DBMixin(object):
+
+    def __init__(self, *args, **kwds):
+        db = kwds.get("db")
+        if db is None or not isinstance(db, DB):
+            raise ValueError("No 'db' parameter with a DB object present.")
+        # Wrap and copy any Query objects from the class into the object.
+        for attribute_name in dir(self.__class__):
+            attr = getattr(self.__class__, attribute_name)
+            if isinstance(attr, Query):
+                # Add the query to self, injecting db whenever the query gets
+                # called.
+                setattr(
+                    self,
+                    attribute_name,
+                    (lambda v=attr: lambda *va, **vk: v(db, *va, **vk))())

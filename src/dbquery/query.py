@@ -35,24 +35,34 @@ def to_dict_formatter(row, cursor):
     return {name: value for value, name in zip(row, column_names)}
 
 
+def to_namedtuple_formatter(namedtuple_class):
+    """
+    :type namedtuple_class: collections.namedtuple
+    """
+    def _f(row, cursor):
+        # Empty row? Return.
+        if not row:
+            return row
+        # No cursor? Raise runtime error.
+        if cursor is None:
+            raise RuntimeError("No DB-API cursor available.")
+
+        # Return a named tuple.
+        return namedtuple_class(row)
+    return _f
+
+
 class Query(object):
     """ Base class for other SQL query classes.
 
     Only use Query directly if you need access to the DB-API cursor.
     """
-    def __init__(self, db, sql):
+    def __init__(self, sql):
         """
-        :param db: The DB class to communicate with the database.
-        :type db: db_access.db.DB
         :param sql: The SQL to execute.
         :type sql: str
         """
-        self._db = db
         self._sql = sql  # save the SQL for later execution
-        # The following variables will be filled in when a connection is
-        # obtained by accessing the connection property.
-        self.OperationalError = db.OperationalError
-        self._connection = None
 
     def _produce_return(self, cursor):
         """ Gets called with the cursor on which the query was executed.
@@ -67,12 +77,14 @@ class Query(object):
         """
         return None
 
-    def __call__(self, *args, **kwds):
+    def __call__(self, db, *args, **kwds):
         """ Execute the SQL with given parameters.
 
         Can only use either positional arguments or keyword arguments but not
         both at the same time. Positional arguments win.
 
+        :param db: The DB class to communicate with the database.
+        :type db: db_access.db.DB
         :rtype: Result of the _produce_return call.
         """
         # Use either args or kwds as parameter for the SQL execution. Mixing
@@ -81,44 +93,45 @@ class Query(object):
         if not params:
             params = kwds
 
-        # Try to execute the SQL through the slected connection.
+        # Try to execute the SQL through the selected connection.
         # If the connection is down try several times to open a new one.
         retry_count = 1
         while 1:  # either return or raise
             try:
                 # Execute and return.
-                return self._db.execute(
-                    self._sql, params, self._produce_return)
-            except self._db.OperationalError:
+                return db.execute(self._sql, params, self._produce_return)
+            except db.OperationalError:
                 # Usually means a connection problem, log and try to connect
                 # again.
-                if retry_count < self._db.retry:
+                if retry_count < db.retry:
                     _LOG.warning(
                         LogMsg(
-                            "DB connection {} failed (retry {}).",
-                            self._db, retry_count),
+                            "DB connection {} failed (retry {}).", db,
+                            retry_count),
                         exc_info=1)
                     retry_count += 1
-                    # Make sure that a new connection is established by closing
-                    # the current (damaged or closed) one.
-                    self._db.close()
+                    # Make sure that a new connection is established by
+                    # closing the current (damaged or closed) one.
+                    db.close()
                 else:
                     # No (more) retry, raise the exception.
                     raise
 
-    def show(self, *args, **kwds):
+    def show(self, db, *args, **kwds):
         """ Show how the SQL looks like when executed by the DB.
 
         This might not be supported by all connection types.
         For example: PostgreSQL does support it, SQLite does not.
 
+        :param db: The DB class to communicate with the database.
+        :type db: db_access.db.DB
         :rtype: str
         """
         # Same as in __call__, arguments win over keywords
         arg = args
         if not arg:
             arg = kwds
-        return self._db.show(self._sql, arg)
+        return db.show(self._sql, arg)
 
 
 class Select(Query):
@@ -130,14 +143,14 @@ class Select(Query):
     a generator instead of a sequence will be returned.
     """
 
-    def __init__(self, db, sql, row_formatter):
+    def __init__(self, sql, row_formatter=None):
         """
         :param row_formatter: function that 'formats' a row, for example into
             a dictionary. take to_dict_formatter as an example if you want to
             implement your own.
         :type row_formatter: function(tuple, Select) -> tuple
         """
-        super(Select, self).__init__(db, sql)
+        super(Select, self).__init__(sql)
         self._row_formatter = row_formatter
 
     def _produce_return(self, cursor):
@@ -192,13 +205,13 @@ class Manipulation(Query):
     Can do an automatic row count check and raises ManipulationCheckError if
     the numbers don't match.
     """
-    def __init__(self, db, sql, rowcount):
+    def __init__(self, sql, rowcount=None):
         """
         :param rowcount: the expected row count for the query or None, if no
             check should be performed
         :type rowcount: int
         """
-        super(Manipulation, self).__init__(db, sql)
+        super(Manipulation, self).__init__(sql)
         self._rowcount = rowcount
 
     def _produce_return(self, cursor):

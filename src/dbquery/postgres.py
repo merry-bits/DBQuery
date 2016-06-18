@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 from psycopg2 import connect, OperationalError as PGOperationalError
 
-from .db import DB
+from .db import DB, _DBMixin
 from .query import SelectOne
 
 
-class _NextVal(SelectOne):
+class NextVal(SelectOne):
 
-    def __init__(self, db, sequence):
-        super(_NextVal, self).__init__(
-            db, 'SELECT nextval(\'{}\')'.format(sequence), None)
+    def __init__(self, sequence):
+        sql = "SELECT nextval('{}')".format(sequence)
+        super(NextVal, self).__init__(sql, None)
+
+
+class _NextVal(_DBMixin, NextVal):
+
+    pass
 
 
 class PostgresDB(DB):
