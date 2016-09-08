@@ -180,21 +180,32 @@ class SelectOne(Select):
 
 
 class SelectGen(Select):
-    """ Takes a callback and returns a generator. """
+    """ Takes a callback, optional callback arguments and arraysize.
+    Processes rowsets of length == arraysize with a generator that
+    blockingcalls the callback repeatedly until no more rows remain.
+    """
 
-    def __init__(self, db, sql, arraysize, callback, cb_args, row_formatter):
+    def __init__(
+            self, db, sql, callback, cb_args=None, arraysize=None,
+            row_formatter=None):
         """
         :param row_formatter: function that 'formats' a row, for example into
             a dictionary. take to_dict_formatter as an example if you want to
             implement your own.
         :type row_formatter: function(tuple, Select) -> tuple
+        :param callback: function that handles the rowsets.
+        :type callback: function(rowsets, cb_args),
+        :param cb_args: Extra parameters for the callback.
+        :type cb_args: [arg1, arg2, ...]
+        :param arraysize: Max number of rows per rowset.
+        :type arraysize: integer
         """
         super(SelectGen, self).__init__(db, sql, row_formatter)
 
         if arraysize is not None and arraysize > 0:
             self._arraysize = arraysize
         else:
-            self._arraysize = 1024
+            self._arraysize = 1  # same as psycopg2 default
 
         self.callback = callback
         self.cb_args = cb_args
@@ -212,10 +223,12 @@ class SelectGen(Select):
 
     def _produce_return(self, cursor):
         """ Repeatedly calls callback with result sets from cursor, blocking
-        between calls, until no more rows remain.
+        between calls, until cursor is consumed and no more rows remain.
         """
-        for r in self._result_generator(cursor):
-            self.callback(r, self.cb_args)
+        for rowset in self._result_generator(cursor):
+            if self._row_formatter is not None:
+                rowset = (self._row_formatter(r, cursor) for r in rowset)
+            self.callback(rowset, *self.cb_args)
 
         return None
 
@@ -233,6 +246,7 @@ class Manipulation(Query):
     Can do an automatic row count check and raises ManipulationCheckError if
     the numbers don't match.
     """
+
     def __init__(self, db, sql, rowcount):
         """
         :param rowcount: the expected row count for the query or None, if no

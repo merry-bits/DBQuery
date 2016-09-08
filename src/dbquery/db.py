@@ -50,9 +50,11 @@ class DB(object):
     def SelectOne(self, sql, row_formatter=None):
         return SelectOne(self, sql, row_formatter)
 
-    def SelectGen(self, sql, arraysize, callback, cb_args, row_formatter=None):
+    def SelectGen(
+            self, sql, callback, cb_args=None, arraysize=None,
+            row_formatter=None):
         return SelectGen(
-            self, sql, arraysize, callback, cb_args, row_formatter)
+            self, sql, callback, cb_args, arraysize, row_formatter)
 
     def Manipulation(self, sql, rowcount=None):
         return Manipulation(self, sql, rowcount)
