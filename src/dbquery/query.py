@@ -179,6 +179,47 @@ class SelectOne(Select):
         return row
 
 
+class SelectGen(Select):
+    """ Takes a callback and returns a generator. """
+
+    def __init__(self, db, sql, arraysize, callback, cb_args, row_formatter):
+        """
+        :param row_formatter: function that 'formats' a row, for example into
+            a dictionary. take to_dict_formatter as an example if you want to
+            implement your own.
+        :type row_formatter: function(tuple, Select) -> tuple
+        """
+        super(SelectGen, self).__init__(db, sql, row_formatter)
+
+        if arraysize is not None and arraysize > 0:
+            self._arraysize = arraysize
+        else:
+            self._arraysize = 1024
+
+        self.callback = callback
+        self.cb_args = cb_args
+
+    def _result_generator(self, cursor):
+        """ Yields sets of rows with length == arraysize until no more rows
+        exist in query result.
+        """
+        while True:
+            results = cursor.fetchmany(self._arraysize)
+            if not results:
+                break
+            else:
+                yield results
+
+    def _produce_return(self, cursor):
+        """ Repeatedly calls callback with result sets from cursor, blocking
+        between calls, until no more rows remain.
+        """
+        for r in self._result_generator(cursor):
+            self.callback(r, self.cb_args)
+
+        return None
+
+
 class ManipulationCheckError(Exception):
     """ Error marker for when a Manipulation call does not behave as expected.
     """

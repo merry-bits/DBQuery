@@ -3,7 +3,7 @@ from functools import wraps
 from logging import getLogger
 
 from .log_msg import LogMsg
-from .query import Query, Select, SelectOne, Manipulation
+from .query import Query, Select, SelectOne, SelectGen, Manipulation
 
 
 _LOG = getLogger(__name__)
@@ -49,6 +49,10 @@ class DB(object):
 
     def SelectOne(self, sql, row_formatter=None):
         return SelectOne(self, sql, row_formatter)
+
+    def SelectGen(self, sql, arraysize, callback, cb_args, row_formatter=None):
+        return SelectGen(
+            self, sql, arraysize, callback, cb_args, row_formatter)
 
     def Manipulation(self, sql, rowcount=None):
         return Manipulation(self, sql, rowcount)
