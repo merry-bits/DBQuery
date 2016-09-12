@@ -65,14 +65,12 @@ class TestBasic(PostgresTestCase):
 
 
 class TestInsertMany(PostgresTestCase):
-    """ Insert and test SelectSetwise and SelectGen """
+    """ Insert several items and test SelectIterator. """
 
-    def test_select_setwise(self):
-        """ Create a table, insert N rows and use SelectSetwise and
-        callback function.
+    def test_select_iterator(self):
+        """ Create N rows, use SelectIterator and callback function.
         """
         N = 10
-        callback_counter = 0
         test_value = "hello"
         self.db.Manipulation("CREATE TABLE test (id INTEGER, val VARCHAR)")()
 
@@ -80,69 +78,31 @@ class TestInsertMany(PostgresTestCase):
             self.db.Manipulation(
                 "INSERT INTO test VALUES(%s, %s)")(str(i), test_value + str(i))
 
-        # SelectSetwise calls this once for every rowset. Number of calls is
-        # N // arraysize + (1 if mod(N, arraysize) > 0 else 0).
-        def _callback(rowset, *args):
-            """ Row elements are tuples. """
-            nonlocal callback_counter
-            self.assertEqual(
-                rowset[0],
-                (callback_counter, "hello" + str(callback_counter)))
-            callback_counter += 1
-            self.assertEqual(
-                rowset[1],
-                (callback_counter, "hello" + str(callback_counter)))
-            callback_counter += 1
-            self.assertEqual(args[0], "hello")
-            self.assertEqual(args[1], "world")
+        # SelectIterator calls this once with a generator of rows.
+        def _callback(row_generator, *args):
+            """ Handles generator which delivers individual rows. Row elements
+                are tuples.
+            """
+            nonlocal N
+            row_counter = 0
+            for row in row_generator:
+                self.assertEqual(
+                    row,
+                    (row_counter, "hello" + str(row_counter)))
+                row_counter += 1
+                self.assertEqual(args[0], "hello")
+                self.assertEqual(args[1], "world")
+            self.assertEqual(row_counter, N)
 
         cb_args = ["hello", "world"]
         arraysize = 2
-        select = self.db.SelectSetwise(
+        select = self.db.SelectIterator(
             "SELECT * FROM test", _callback, cb_args, arraysize)
         sg = select()
         self.assertEqual(sg, None)
 
-    def test_select_setwise_row_formatter(self):
-        """ Create a table, insert N rows and select them with generator and
-        callback function, using the row formatter.
-        """
-        N = 10
-        callback_counter = 0
-        test_value = "hello"
-        self.db.Manipulation("CREATE TABLE test (id INTEGER, val VARCHAR)")()
-
-        for i in range(N):
-            self.db.Manipulation(
-                "INSERT INTO test VALUES(%s, %s)")(str(i), test_value + str(i))
-
-        # SelectSetwise calls this once for every rowset. Number of calls is
-        # N // arraysize + (1 if mod(N, arraysize) > 0 else 0).
-        def _callback(rowset, *args):
-            """ Row elements are now dicts. """
-            rowset = list(rowset)
-            nonlocal callback_counter
-            self.assertEqual(rowset[0]["id"], callback_counter)
-            self.assertEqual(rowset[0]["val"], "hello" + str(callback_counter))
-            callback_counter += 1
-            self.assertEqual(rowset[1]["id"], callback_counter)
-            self.assertEqual(rowset[1]["val"], "hello" + str(callback_counter))
-            callback_counter += 1
-            self.assertEqual(args[0], "hello")
-            self.assertEqual(args[1], "world")
-
-        cb_args = ["hello", "world"]
-        arraysize = 2
-        select = self.db.SelectSetwise(
-            "SELECT * FROM test", _callback, cb_args, arraysize,
-            to_dict_formatter)
-
-        sg = select()
-        self.assertEqual(sg, None)
-
-    def test_select_gen(self):
-        """ Create a table, insert N rows and use SelectSetwise and
-        callback function.
+    def test_select_iterator_row_formatter(self):
+        """ Create N rows, use SelectIterator, callback function and formatter.
         """
         N = 10
         test_value = "hello"
@@ -152,65 +112,24 @@ class TestInsertMany(PostgresTestCase):
             self.db.Manipulation(
                 "INSERT INTO test VALUES(%s, %s)")(str(i), test_value + str(i))
 
-        # SelectGen calls this once with a generator of rowsets. Number of
-        # rowsets is N // arraysize + (1 if mod(N, arraysize) > 0 else 0)
-        def _callback(rowset_generator, *args):
-            """ Handles generator which delivers rowsets as iterables. Row
-            elements are tuples. """
-            callback_counter = 0
-            for rowset in rowset_generator:
+        # SelectIterator calls this once with a generator of rows.
+        def _callback(row_generator, *args):
+            """ Handles generator which delivers individual rows formatted with
+                dict_formatter. Row elements are dicts.
+            """
+            row_counter = 0
+            for row in row_generator:
+                self.assertEqual(row["id"], row_counter)
                 self.assertEqual(
-                    rowset[0],
-                    (callback_counter, "hello" + str(callback_counter)))
-                callback_counter += 1
-                self.assertEqual(
-                    rowset[1],
-                    (callback_counter, "hello" + str(callback_counter)))
-                callback_counter += 1
+                    row["val"], "hello" + str(row_counter))
+                row_counter += 1
                 self.assertEqual(args[0], "hello")
                 self.assertEqual(args[1], "world")
+            self.assertEqual(row_counter, N)
 
         cb_args = ["hello", "world"]
         arraysize = 2
-        select = self.db.SelectGen(
-            "SELECT * FROM test", _callback, cb_args, arraysize)
-        sg = select()
-        self.assertEqual(sg, None)
-
-    def test_select_gen_row_formatter(self):
-        """ Create a table, insert N rows and select them with generator and
-        callback function, using the row formatter.
-        """
-        N = 10
-        test_value = "hello"
-        self.db.Manipulation("CREATE TABLE test (id INTEGER, val VARCHAR)")()
-
-        for i in range(N):
-            self.db.Manipulation(
-                "INSERT INTO test VALUES(%s, %s)")(str(i), test_value + str(i))
-
-        # SelectSetwise calls this once for every rowset. Number of calls is
-        # N // arraysize + (1 if mod(N, arraysize) > 0 else 0).
-        def _callback(rowset_generator, *args):
-            """ Handles generator which delivers rowsets as iterables
-            formatted with dict_formatter. Row elements are dicts. """
-            callback_counter = 0
-            for rowset in rowset_generator:
-                rowset = list(rowset)
-                self.assertEqual(rowset[0]["id"], callback_counter)
-                self.assertEqual(
-                    rowset[0]["val"], "hello" + str(callback_counter))
-                callback_counter += 1
-                self.assertEqual(rowset[1]["id"], callback_counter)
-                self.assertEqual(
-                    rowset[1]["val"], "hello" + str(callback_counter))
-                callback_counter += 1
-                self.assertEqual(args[0], "hello")
-                self.assertEqual(args[1], "world")
-
-        cb_args = ["hello", "world"]
-        arraysize = 2
-        select = self.db.SelectGen(
+        select = self.db.SelectIterator(
             "SELECT * FROM test", _callback, cb_args, arraysize,
             to_dict_formatter)
 

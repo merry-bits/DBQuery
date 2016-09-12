@@ -47,6 +47,7 @@ coverage.xml
 .project
 .pydevproject
 .settings/
+.anaconda
 
 # Virtual environment
 .pyenv/

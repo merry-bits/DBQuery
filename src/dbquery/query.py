@@ -40,6 +40,7 @@ class Query(object):
 
     Only use Query directly if you need access to the DB-API cursor.
     """
+
     def __init__(self, db, sql):
         """
         :param db: The DB class to communicate with the database.
@@ -178,13 +179,17 @@ class SelectOne(Select):
 
         return row
 
-class SelectSetwise(Select):
-    """ Takes a callback, optional callback arguments and arraysize.
-    Passes rowsets of length == arraysize into the callback, calling it
-    repeatedly until no more rows remain. If row formatter is specified, the
-    rowsets are processed before delivery.
 
-    Callback needs to handle iterable of rows.
+class SelectIterator(Select):
+    """ Takes a callback, optional callback arguments and arraysize.
+    Calls callback once with a generator. The generator yields individual rows
+    until no more rows remain. If row formatter is specified, the rows are
+    already processed inside generator.
+
+    The arraysize parameter allows fetching data internally in optimal chunks
+    from db.
+
+    Callback needs to handle the row generator.
     """
 
     def __init__(
@@ -195,14 +200,15 @@ class SelectSetwise(Select):
             a dictionary. take to_dict_formatter as an example if you want to
             implement your own.
         :type row_formatter: function(tuple, Select) -> tuple
-        :param callback: function that handles the rowsets.
-        :type callback: function(rowsets, cb_args),
+        :param callback: function that handles the row generator.
+        :type callback: function(row_generator, cb_args),
         :param cb_args: Extra parameters for the callback.
         :type cb_args: [arg1, arg2, ...]
-        :param arraysize: Max number of rows per rowset.
+        :param arraysize: Max number of rows per rowset fetched internally from
+            db.
         :type arraysize: integer
         """
-        super(SelectSetwise, self).__init__(db, sql, row_formatter)
+        super(SelectIterator, self).__init__(db, sql, row_formatter)
 
         if arraysize is not None and arraysize > 0:
             self._arraysize = arraysize
@@ -212,80 +218,22 @@ class SelectSetwise(Select):
         self.callback = callback
         self.cb_args = cb_args
 
-    def _rowset_generator(self, cursor):
-        """ Yields sets of rows with length == arraysize until no more rows
-        exist in query result.
+    def _row_generator(self, cursor):
+        """ Yields individual rows until no more rows
+        exist in query result. Applies row formatter if such exists.
         """
-        while True:
-            rowset = cursor.fetchmany(self._arraysize)
-            if not rowset:
-                break
-            else:
-                yield rowset
-
-    def _produce_return(self, cursor):
-        """ Repeatedly calls callback with result sets from cursor, blocking
-        between calls, until cursor is consumed and no more rows remain.
-        """
-        for rowset in self._rowset_generator(cursor):
+        rowset = cursor.fetchmany(self._arraysize)
+        while rowset:
             if self._row_formatter is not None:
                 rowset = (self._row_formatter(r, cursor) for r in rowset)
-            self.callback(rowset, *self.cb_args)
-
-        return None
-
-
-class SelectGen(Select):
-    """ Takes a callback, optional callback arguments and arraysize.
-    Calls callback once with a generator. The generator  yields rowsets of
-    length == arraysize until no more rows remain. If row formatter is
-    specified, the rowsets are already processed inside generator.
-
-    Callback needs to handle the generator.
-    """
-
-    def __init__(
-            self, db, sql, callback, cb_args=None, arraysize=None,
-            row_formatter=None):
-        """
-        :param row_formatter: function that 'formats' a row, for example into
-            a dictionary. take to_dict_formatter as an example if you want to
-            implement your own.
-        :type row_formatter: function(tuple, Select) -> tuple
-        :param callback: function that handles the rowsets.
-        :type callback: function(rowsets, cb_args),
-        :param cb_args: Extra parameters for the callback.
-        :type cb_args: [arg1, arg2, ...]
-        :param arraysize: Max number of rows per rowset.
-        :type arraysize: integer
-        """
-        super(SelectGen, self).__init__(db, sql, row_formatter)
-
-        if arraysize is not None and arraysize > 0:
-            self._arraysize = arraysize
-        else:
-            self._arraysize = 1  # same as psycopg2 default
-
-        self.callback = callback
-        self.cb_args = cb_args
-
-    def _rowset_generator(self, cursor):
-        """ Yields sets of rows with length == arraysize until no more rows
-        exist in query result. Applies row formatter.
-        """
-        while True:
+            for row in rowset:
+                yield row
             rowset = cursor.fetchmany(self._arraysize)
-            if not rowset:
-                break
-            else:
-                if self._row_formatter is not None:
-                    rowset = (self._row_formatter(r, cursor) for r in rowset)
-                yield rowset
 
     def _produce_return(self, cursor):
         """ Calls callback once with generator.
         """
-        self.callback(self._rowset_generator(cursor), *self.cb_args)
+        self.callback(self._row_generator(cursor), *self.cb_args)
         return None
 
 

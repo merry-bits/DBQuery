@@ -3,8 +3,7 @@ from functools import wraps
 from logging import getLogger
 
 from .log_msg import LogMsg
-from .query import Query, Select, SelectOne, SelectGen, SelectSetwise, \
-    Manipulation
+from .query import Query, Select, SelectOne, SelectIterator, Manipulation
 
 
 _LOG = getLogger(__name__)
@@ -51,16 +50,10 @@ class DB(object):
     def SelectOne(self, sql, row_formatter=None):
         return SelectOne(self, sql, row_formatter)
 
-    def SelectSetwise(
+    def SelectIterator(
             self, sql, callback, cb_args=None, arraysize=None,
             row_formatter=None):
-        return SelectSetwise(
-            self, sql, callback, cb_args, arraysize, row_formatter)
-
-    def SelectGen(
-            self, sql, callback, cb_args=None, arraysize=None,
-            row_formatter=None):
-        return SelectGen(
+        return SelectIterator(
             self, sql, callback, cb_args, arraysize, row_formatter)
 
     def Manipulation(self, sql, rowcount=None):
