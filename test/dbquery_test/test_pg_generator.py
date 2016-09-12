@@ -70,7 +70,6 @@ class TestInsertMany(PostgresTestCase):
             """ Handles generator which delivers individual rows. Row elements
                 are tuples.
             """
-            nonlocal N
             row_counter = 0
             for row in row_generator:
                 self.assertEqual(
@@ -79,7 +78,7 @@ class TestInsertMany(PostgresTestCase):
                 row_counter += 1
                 self.assertEqual(args[0], "hello")
                 self.assertEqual(args[1], "world")
-            self.assertEqual(row_counter, N)
+            self.assertEqual(row_counter, 10)
 
         cb_args = ["hello", "world"]
         arraysize = 2
@@ -112,7 +111,7 @@ class TestInsertMany(PostgresTestCase):
                 row_counter += 1
                 self.assertEqual(args[0], "hello")
                 self.assertEqual(args[1], "world")
-            self.assertEqual(row_counter, N)
+            self.assertEqual(row_counter, 10)
 
         cb_args = ["hello", "world"]
         arraysize = 2
