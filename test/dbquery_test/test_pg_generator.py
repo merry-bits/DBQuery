@@ -51,19 +51,6 @@ class PostgresTestCase(TestCase):
         self.db.close()
 
 
-class TestBasic(PostgresTestCase):
-    """ Insert, select etc. """
-
-    def test_create_insert_select(self):
-        """ Create a table insert a row and select it.
-        """
-        test_value = "hello"
-        self.db.Manipulation("CREATE TABLE test (test VARCHAR)")()
-        self.db.Manipulation("INSERT INTO test VALUES(%s)")(test_value)
-        select = self.db.Select("SELECT * FROM test")
-        self.assertEqual(select()[0][0], test_value)
-
-
 class TestInsertMany(PostgresTestCase):
     """ Insert several items and test SelectIterator. """
 
