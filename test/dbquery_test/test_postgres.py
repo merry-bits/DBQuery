@@ -17,9 +17,8 @@ _TEST_SCHEMA = "dbquery_test"
 
 _DBQUERY_POSTGRES_TEST = "DBQUERY_POSTGRES_TEST"
 
-
 @skipUnless(
-    getenv(_DBQUERY_POSTGRES_TEST), 'PostgerSQL connection tests not enabled.')
+    getenv(_DBQUERY_POSTGRES_TEST), 'PostgreSQL connection tests not enabled.')
 class PostgresTestCase(TestCase):
     """ Adds the PostgreSQL connection to the TestCase class in the setUp
     method and clears up the DB in tearDown.
@@ -171,7 +170,7 @@ class TestNextVal(PostgresTestCase):
     def test_next(self):
         """ Create a primary key and use NextVal to get the next id.
 
-        A sequence name for SERIAL consits of:
+        A sequence name for SERIAL consists of:
             <table name>_<column name>_seq
         """
         table_name = 'test'

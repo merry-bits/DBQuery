@@ -40,6 +40,7 @@ class Query(object):
 
     Only use Query directly if you need access to the DB-API cursor.
     """
+
     def __init__(self, db, sql):
         """
         :param db: The DB class to communicate with the database.
@@ -179,6 +180,63 @@ class SelectOne(Select):
         return row
 
 
+class SelectIterator(Select):
+    """ Takes a callback, optional callback arguments and arraysize.
+    Calls callback once with a generator. The generator yields individual rows
+    until no more rows remain. If row formatter is specified, the rows are
+    already processed inside generator.
+
+    The arraysize parameter allows fetching data internally in optimal chunks
+    from db.
+
+    Callback needs to handle the row generator.
+    """
+
+    def __init__(
+            self, db, sql, callback, cb_args=None, arraysize=None,
+            row_formatter=None):
+        """
+        :param row_formatter: function that 'formats' a row, for example into
+            a dictionary. take to_dict_formatter as an example if you want to
+            implement your own.
+        :type row_formatter: function(tuple, Select) -> tuple
+        :param callback: function that handles the row generator.
+        :type callback: function(row_generator, cb_args),
+        :param cb_args: Extra parameters for the callback.
+        :type cb_args: [arg1, arg2, ...]
+        :param arraysize: Max number of rows per rowset fetched internally from
+            db.
+        :type arraysize: integer
+        """
+        super(SelectIterator, self).__init__(db, sql, row_formatter)
+
+        if arraysize is not None and arraysize > 0:
+            self._arraysize = arraysize
+        else:
+            self._arraysize = 1  # same as psycopg2 default
+
+        self.callback = callback
+        self.cb_args = cb_args
+
+    def _row_generator(self, cursor):
+        """ Yields individual rows until no more rows
+        exist in query result. Applies row formatter if such exists.
+        """
+        rowset = cursor.fetchmany(self._arraysize)
+        while rowset:
+            if self._row_formatter is not None:
+                rowset = (self._row_formatter(r, cursor) for r in rowset)
+            for row in rowset:
+                yield row
+            rowset = cursor.fetchmany(self._arraysize)
+
+    def _produce_return(self, cursor):
+        """ Calls callback once with generator.
+        """
+        self.callback(self._row_generator(cursor), *self.cb_args)
+        return None
+
+
 class ManipulationCheckError(Exception):
     """ Error marker for when a Manipulation call does not behave as expected.
     """
@@ -192,6 +250,7 @@ class Manipulation(Query):
     Can do an automatic row count check and raises ManipulationCheckError if
     the numbers don't match.
     """
+
     def __init__(self, db, sql, rowcount):
         """
         :param rowcount: the expected row count for the query or None, if no
