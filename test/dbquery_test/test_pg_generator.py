@@ -70,20 +70,20 @@ class TestInsertMany(PostgresTestCase):
             """ Handles generator which delivers individual rows. Row elements
                 are tuples.
             """
+            self.assertEqual(args[0], "hello")
+            self.assertEqual(args[1], "world")
             row_counter = 0
             for row in row_generator:
                 self.assertEqual(
                     row,
                     (row_counter, "hello" + str(row_counter)))
                 row_counter += 1
-                self.assertEqual(args[0], "hello")
-                self.assertEqual(args[1], "world")
             self.assertEqual(row_counter, 10)
 
         cb_args = ["hello", "world"]
         arraysize = 2
         select = self.db.SelectIterator(
-            "SELECT * FROM test", _callback, cb_args, arraysize)
+            "SELECT * FROM test ORDER BY id", _callback, cb_args, arraysize)
         sg = select()
         self.assertEqual(sg, None)
 
@@ -103,20 +103,20 @@ class TestInsertMany(PostgresTestCase):
             """ Handles generator which delivers individual rows formatted with
                 dict_formatter. Row elements are dicts.
             """
+            self.assertEqual(args[0], "hello")
+            self.assertEqual(args[1], "world")
             row_counter = 0
             for row in row_generator:
                 self.assertEqual(row["id"], row_counter)
                 self.assertEqual(
                     row["val"], "hello" + str(row_counter))
                 row_counter += 1
-                self.assertEqual(args[0], "hello")
-                self.assertEqual(args[1], "world")
             self.assertEqual(row_counter, 10)
 
         cb_args = ["hello", "world"]
         arraysize = 2
         select = self.db.SelectIterator(
-            "SELECT * FROM test", _callback, cb_args, arraysize,
+            "SELECT * FROM test ORDER BY id", _callback, cb_args, arraysize,
             to_dict_formatter)
 
         sg = select()
