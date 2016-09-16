@@ -21,7 +21,7 @@ printing some rows from a table named world:
     >>> for hello_id in (123, 456):
     ...     rows = get_hello(hello_id)
     ...     print(rows)  # list of row tuples
-    ... 
+    ...
     [('hello',)]
     [('another hello',)]
 
@@ -33,7 +33,7 @@ Using ``SelectOne`` instead of ``Select`` this can be simplified even further:
     >>> for hello_id in (123, 456):
     ...     hello = get_one_hello(hello_id)
     ...     print(hello)  # content of the hello column
-    ... 
+    ...
     hello
     another hello
 
@@ -174,4 +174,35 @@ value will be returned:
 
     >>> get_first_name = db.SelectOne(
     ...     "SELECT first_name FROM users where id=?")
-    >>> first_name = get_first_name(123) 
+    >>> first_name = get_first_name(123)
+
+
+SelectIterator
+^^^^^^^^^^^^^^
+
+Select rows and precess them in chunks. For this purpose ``SelectIterator``
+requeires a callback function together with the SQL. This callback will at
+query time be called with a generator which produces all the rows from the
+query result, directly streamed from the DB, in blocks of specified size
+(``arraysize``).
+
+It is possible to specify additional parameters for the callback function, if
+needed.
+
+.. code-block:: python
+
+    >>> def callback(row_generator):
+    ...     for row in row_generator:
+    ...         print(row)
+    ...
+    >>> get_first_names = db.SelectIterator(
+    ...     "SELECT first_name FROM users", callback)
+    >>> get_first_names()
+
+Changelog
+=========
+
+v0.4
+----
+
+* Added SelectIterator
