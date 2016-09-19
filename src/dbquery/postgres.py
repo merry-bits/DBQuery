@@ -55,6 +55,14 @@ class PostgresDB(DB):
                 return return_function(c)
 
     @DB.connected
+    def nonclosing_execute(self, sql, params, return_function=None):
+        """ Does not close cursor. Ensure that cursor is closed when done. """
+        cursor = self._connection.cursor()
+        cursor.execute(sql, params)
+        if return_function:
+            return return_function(cursor)
+
+    @DB.connected
     def show(self, sql, params):
         with self._connection.cursor() as cursor:
             return cursor.mogrify(sql, params).decode(

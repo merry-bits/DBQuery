@@ -4,7 +4,7 @@
 Simplify SQL execution, using a configured DB class.
 """
 from logging import getLogger
-
+from contextlib import contextmanager
 from .log_msg import LogMsg
 
 
@@ -54,6 +54,8 @@ class Query(object):
         # obtained by accessing the connection property.
         self.OperationalError = db.OperationalError
         self._connection = None
+        # Default cursor execute function.
+        self._execute_function = self._db.execute
 
     def _produce_return(self, cursor):
         """ Gets called with the cursor on which the query was executed.
@@ -88,7 +90,7 @@ class Query(object):
         while 1:  # either return or raise
             try:
                 # Execute and return.
-                return self._db.execute(
+                return self._execute_function(
                     self._sql, params, self._produce_return)
             except self._db.OperationalError:
                 # Usually means a connection problem, log and try to connect
@@ -232,9 +234,34 @@ class SelectIterator(Select):
 
     def _produce_return(self, cursor):
         """ Calls callback once with generator.
+            :rtype: None
         """
         self.callback(self._row_generator(cursor), *self.cb_args)
         return None
+
+
+class SelectCursor(Query):
+    """ Returns cursor for external processing. Ensures closing of cursor and
+        connection.
+    """
+
+    def __init__(self, db, sql):
+        super(SelectCursor, self).__init__(db, sql)
+        # Non-closing cursor execute function.
+        self._execute_function = self._db.nonclosing_execute
+
+    @contextmanager
+    def _produce_return(self, cursor):
+        """ Returns the cursor in a context, ensuring that cursor is closed
+            when done.
+        """
+        try:
+            yield cursor
+        finally:
+            if cursor:
+                cursor.close()
+            if self._connection:
+                self._connection.close()
 
 
 class ManipulationCheckError(Exception):
