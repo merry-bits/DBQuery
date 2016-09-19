@@ -3,7 +3,8 @@ from functools import wraps
 from logging import getLogger
 
 from .log_msg import LogMsg
-from .query import Query, Select, SelectOne, SelectIterator, Manipulation
+from .query import Query, Select, SelectOne, SelectIterator, SelectCursor, \
+    Manipulation
 
 
 _LOG = getLogger(__name__)
@@ -55,6 +56,9 @@ class DB(object):
             row_formatter=None):
         return SelectIterator(
             self, sql, callback, cb_args, arraysize, row_formatter)
+
+    def SelectCursor(self, sql):
+        return SelectCursor(self, sql)
 
     def Manipulation(self, sql, rowcount=None):
         return Manipulation(self, sql, rowcount)

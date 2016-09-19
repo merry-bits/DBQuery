@@ -51,7 +51,7 @@ class PostgresTestCase(TestCase):
         self.db.close()
 
 
-class TestInsertMany(PostgresTestCase):
+class TestSelectIterator(PostgresTestCase):
     """ Insert several items and test SelectIterator. """
 
     def test_select_iterator(self):
@@ -121,3 +121,36 @@ class TestInsertMany(PostgresTestCase):
 
         sg = select()
         self.assertEqual(sg, None)
+
+
+class TestSelectCursor(PostgresTestCase):
+    """ Insert several items and test SelectCursor. """
+
+    def _row_generator(select_cursor, arraysize):
+        """ Yields individual rows until no more rows exist in query result.
+        :param select_cursor: Closeable cursor context delivering a psycopg2
+            cursor.
+        :type select_cursor: SelectCursor.
+        """
+        with select_cursor() as cursor:
+            rowset = cursor.fetchmany(arraysize)
+            while rowset:
+                for row in rowset:
+                    yield row
+                rowset = cursor.fetchmany(arraysize)
+
+    def test_select_cursor(self):
+        """ Create N rows, use SelectCursor and an external row generator.
+        """
+        N = 10
+        test_value = "hello"
+        self.db.Manipulation("CREATE TABLE test (id INTEGER, val VARCHAR)")()
+
+        for i in range(N):
+            self.db.Manipulation(
+                "INSERT INTO test VALUES(%s, %s)")(str(i), test_value + str(i))
+
+
+        select = self.db.SelectGenerator(
+            "SELECT * FROM test ORDER BY id")
+        # TODO: finish

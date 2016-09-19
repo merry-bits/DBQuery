@@ -241,8 +241,8 @@ class SelectIterator(Select):
 
 
 class SelectCursor(Query):
-    """ Returns cursor for external processing. Ensures closing of cursor and
-        connection.
+    """ Returns cursor context for external processing. Use "with" to ensure
+        closing of cursor.
     """
 
     def __init__(self, db, sql):
@@ -251,17 +251,15 @@ class SelectCursor(Query):
         self._execute_function = self._db.nonclosing_execute
 
     @contextmanager
-    def _produce_return(self, cursor):
-        """ Returns the cursor in a context, ensuring that cursor is closed
-            when done.
-        """
+    def __call__(self, *args, **kwds):
+        cursor = super(SelectCursor, self).__call__(*args, **kwds)
         try:
             yield cursor
         finally:
-            if cursor:
+            try:
                 cursor.close()
-            if self._connection:
-                self._connection.close()
+            except Exception:
+                _LOG.warning("Couldn't close cursor.", exc_info=True)
 
 
 class ManipulationCheckError(Exception):
