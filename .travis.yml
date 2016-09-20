@@ -1,7 +1,5 @@
 addons:
   postgresql: "9.4"
-services:
-  - postgresql
 before_script:
   - psql -c 'create database travis_ci_test;' -U postgres
 language: python
@@ -11,7 +9,7 @@ python:
   - "3.3"
   - "3.4"
   - "3.5"
-  - "3.6"
+  - "3.6-dev"
 env:
   - DBQUERY_POSTGRES_TEST="postgres://postgres:@localhost/travis_ci_test"
 before_cache:
