@@ -6,7 +6,7 @@ from dbquery import SQLiteDB
 
 class _CloseErrorConnection():
 
-    def close(self):
+    def close(self):  # pylint: disable=no-self-use
         """ Simulate an error on close.
         """
         raise Exception()
@@ -53,11 +53,12 @@ class SQLiteTest(TestCase):
         self.db.Manipulation("CREATE TABLE test (test VARCHAR)")()
         # Now try to create the connection again, without closing it first.
         with self.assertRaises(RuntimeError):
-            self.db._connect()
+            self.db._connect()  # pylint: disable=protected-access
 
     def test_close_error(self):
         """ Add a faulty close function and check that the DB instance can
         handle that.
         """
-        self.db._connection = _CloseErrorConnection()
+        self.db._connection = (  # pylint: disable=protected-access
+            _CloseErrorConnection())
         self.db.close()  # should not raise an error!

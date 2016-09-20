@@ -57,7 +57,8 @@ class Query(object):
         # Default cursor execute function.
         self._execute_function = self._db.execute
 
-    def _produce_return(self, cursor):
+    def _produce_return(  # pylint: disable=no-self-use,unused-argument
+            self, cursor):
         """ Gets called with the cursor on which the query was executed.
 
         Its return value will be the return value for the __call__ function.
@@ -82,7 +83,7 @@ class Query(object):
         # does not work.
         params = args
         if not params:
-            params = kwds
+            params = kwds  # pylint: disable=redefined-variable-type
 
         # Try to execute the SQL through the slected connection.
         # If the connection is down try several times to open a new one.
@@ -120,7 +121,7 @@ class Query(object):
         # Same as in __call__, arguments win over keywords
         arg = args
         if not arg:
-            arg = kwds
+            arg = kwds  # pylint: disable=redefined-variable-type
         return self._db.show(self._sql, arg)
 
 
@@ -194,7 +195,7 @@ class SelectIterator(Select):
     Callback needs to handle the row generator.
     """
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
             self, db, sql, callback, cb_args=None, arraysize=None,
             row_formatter=None):
         """

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-from sqlite3 import connect, OperationalError as SQL3OperationalError
+from sqlite3 import OperationalError as SQL3OperationalError
+from sqlite3 import connect
 
 from .db import DB
 
 
-class SQLiteDB(DB):
+# TODO: complete or remove?
+class SQLiteDB(DB):  # pylint: disable=abstract-method
     """ SQLite DB class.
     From https://docs.python.org/3/library/sqlite3.html
     Needs at least:

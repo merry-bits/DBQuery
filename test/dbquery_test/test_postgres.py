@@ -17,12 +17,18 @@ _TEST_SCHEMA = "dbquery_test"
 
 _DBQUERY_POSTGRES_TEST = "DBQUERY_POSTGRES_TEST"
 
+
 @skipUnless(
     getenv(_DBQUERY_POSTGRES_TEST), 'PostgreSQL connection tests not enabled.')
 class PostgresTestCase(TestCase):
     """ Adds the PostgreSQL connection to the TestCase class in the setUp
     method and clears up the DB in tearDown.
     """
+
+    def __init__(self, *args, **kwds):
+        super(PostgresTestCase, self).__init__(*args, **kwds)
+        self.db = None
+        self.set_search_path = None
 
     def setUp(self):
         """ Set up a connection and create the test schema, drop it first if
@@ -35,12 +41,14 @@ class PostgresTestCase(TestCase):
         test_dsn = getenv(_DBQUERY_POSTGRES_TEST)
         # Set up the connection.
         self.db = PostgresDB(test_dsn, retry=3)
+        self.set_search_path = self.db.Manipulation(
+            "SET search_path TO {}".format(_TEST_SCHEMA))
         # Drop schema if it exists and create an empty one.
         self.db.Manipulation(
             "DROP SCHEMA IF EXISTS {} CASCADE".format(_TEST_SCHEMA))()
         # Create schema and set it as default.
         self.db.Manipulation("CREATE SCHEMA {}".format(_TEST_SCHEMA))()
-        self.db.Manipulation("SET search_path TO {}".format(_TEST_SCHEMA))()
+        self.set_search_path()
 
     def tearDown(self):
         super(PostgresTestCase, self).tearDown()
@@ -76,18 +84,18 @@ class PostgresTest(PostgresTestCase):
         """ Test show SQL, without parameters.
         """
         test_sql = "SELECT \'hello\'"
-        self.assertEqual(self.db.show(test_sql,  []), test_sql)
-        self.assertEqual(self.db.show(test_sql,  None), test_sql)
+        self.assertEqual(self.db.show(test_sql, []), test_sql)
+        self.assertEqual(self.db.show(test_sql, None), test_sql)
         # For coverage, execute _connect line, after closing a connection.
         self.db.close()
-        self.assertEqual(self.db.show(test_sql,  []), test_sql)
+        self.assertEqual(self.db.show(test_sql, []), test_sql)
 
     def test_show_args(self):
         """ Test show SQL, with arguments.
         """
         test_sql = "SELECT * FROM WHERE id=%s"
         test_value = "test_value"
-        self.assertIn(test_value, self.db.show(test_sql,  [test_value]))
+        self.assertIn(test_value, self.db.show(test_sql, [test_value]))
 
     def test_show_kwds(self):
         """ Test show SQL, with arguments.
@@ -101,14 +109,14 @@ class PostgresTest(PostgresTestCase):
         """
         self.db.close()
         with self.assertRaises(RuntimeError):
-            self.db._commit()
+            self.db._commit()  # pylint: disable=protected-access
 
     def test_closed_rollback(self):
         """ A commit on a closed connection should throw an error.
         """
         self.db.close()
         with self.assertRaises(RuntimeError):
-            self.db._rollback()
+            self.db._rollback()  # pylint: disable=protected-access
 
     def test_context(self):
         """ Test using a transaction to insert data.
@@ -119,6 +127,7 @@ class PostgresTest(PostgresTestCase):
             self.db.Manipulation("CREATE TABLE test (test VARCHAR)")()
             self.db.Manipulation("INSERT INTO test VALUES(%s)")(test_value)
         self.db.close()  # execute _connect line in begin. Coverage!
+        self.set_search_path()  # opens connection again
         with self.db:
             self.assertEqual(select()[0][0], test_value)
 
@@ -145,6 +154,7 @@ class PostgresTest(PostgresTestCase):
                 self.db.Manipulation(
                     "INSERT INTO test VALUES(%s)")(test_value)
                 db.close()  # ending the transaction now raises an error
+        self.set_search_path()  # opens the connection again
         self.assertEqual(len(select()), 0)
 
     def test_context_rollback_closed(self):
@@ -160,6 +170,7 @@ class PostgresTest(PostgresTestCase):
                     "INSERT INTO test VALUES(%s)")(test_value)
                 db.close()
                 db.abort_transaction()  # raises an error
+        self.set_search_path()  # opens the connection again
         self.assertEqual(len(select()), 0)
 
 

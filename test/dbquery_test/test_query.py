@@ -12,7 +12,7 @@ from dbquery.db import DB as DBBase
 _RETRY = 2
 
 
-class DB(DBBase):
+class DB(DBBase):  # pylint: disable=abstract-method
     """ Empty/dummy connection class.
 
     The execute function behavior can be modified as needed: return a specific
@@ -44,7 +44,7 @@ class DB(DBBase):
         """
         self.execute_calls += 1
         if self._raise_on_exec:
-            raise self.InternalError()
+            raise self.OperationalError()
         if self._exec_cursor:
             return produce_return(self._exec_cursor)
         return produce_return((sql, params))

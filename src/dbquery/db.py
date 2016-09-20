@@ -3,8 +3,12 @@ from functools import wraps
 from logging import getLogger
 
 from .log_msg import LogMsg
-from .query import Query, Select, SelectOne, SelectIterator, QueryCursor, \
-    Manipulation
+from .query import Manipulation
+from .query import Query
+from .query import QueryCursor
+from .query import Select
+from .query import SelectIterator
+from .query import SelectOne
 
 
 _LOG = getLogger(__name__)
@@ -45,20 +49,20 @@ class DB(object):
     def Query(self, sql):
         return Query(self, sql)
 
+    def QueryCursor(self, sql):
+        return QueryCursor(self, sql)
+
     def Select(self, sql, row_formatter=None):
         return Select(self, sql, row_formatter)
 
     def SelectOne(self, sql, row_formatter=None):
         return SelectOne(self, sql, row_formatter)
 
-    def SelectIterator(
+    def SelectIterator(  # pylint: disable=too-many-arguments
             self, sql, callback, cb_args=None, arraysize=None,
             row_formatter=None):
         return SelectIterator(
             self, sql, callback, cb_args, arraysize, row_formatter)
-
-    def QueryCursor(self, sql):
-        return QueryCursor(self, sql)
 
     def Manipulation(self, sql, rowcount=None):
         return Manipulation(self, sql, rowcount)
@@ -181,6 +185,7 @@ class DB(object):
 
         @wraps(f)
         def new_f(self, *args, **kwds):
+            # pylint: disable=protected-access
             if self._connection is None:
                 self._connect()
             return f(self, *args, **kwds)

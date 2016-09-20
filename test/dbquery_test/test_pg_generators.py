@@ -133,7 +133,7 @@ class TestQueryCursor(PostgresTestCase):
         :type select_cursor: QueryCursor object.
         """
         # Use return value of __call__ in a "with" statement like so.
-        outer_cursor = None
+        outer_cursor = None  # @UnusedVariable
         with select_cursor() as cursor:
             outer_cursor = cursor  # so we can test for closed when done
             rowset = cursor.fetchmany(arraysize)

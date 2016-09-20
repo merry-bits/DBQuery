@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from psycopg2 import connect, OperationalError as PGOperationalError
+from psycopg2 import OperationalError as PGOperationalError
+from psycopg2 import connect
 
 from .db import DB
 from .query import SelectOne
@@ -49,10 +50,10 @@ class PostgresDB(DB):
 
     @DB.connected
     def execute(self, sql, params, return_function=None):
-        with self._connection.cursor() as c:
-            c.execute(sql, params)
+        with self._connection.cursor() as cursor:
+            cursor.execute(sql, params)
             if return_function:
-                return return_function(c)
+                return return_function(cursor)
 
     @DB.connected
     def nonclosing_execute(self, sql, params, return_function=None):

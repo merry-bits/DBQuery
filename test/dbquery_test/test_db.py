@@ -8,7 +8,7 @@ from dbquery.db import DB as DBBase
 _TEST_PARAM = "test_param"
 
 
-class DB(DBBase):
+class DB(DBBase):  # pylint: disable=abstract-method
     """ Empty database class, for testing __enter__, __exit__ from Connection.
 
     Counts all transaction related calls.
@@ -137,11 +137,11 @@ class TestConnection(TestCase):
         with self.assertRaises(NotImplementedError):
             db.show(None, None)
         with self.assertRaises(NotImplementedError):
-            db._begin()
+            db._begin()  # pylint: disable=protected-access
         with self.assertRaises(NotImplementedError):
-            db._commit()
+            db._commit()  # pylint: disable=protected-access
         with self.assertRaises(NotImplementedError):
-            db._rollback()
+            db._rollback()  # pylint: disable=protected-access
         with self.assertRaises(NotImplementedError):
             with db:  # calls __enter__ which calls _begin
                 pass
