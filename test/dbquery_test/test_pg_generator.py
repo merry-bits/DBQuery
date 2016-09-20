@@ -133,12 +133,15 @@ class TestSelectCursor(PostgresTestCase):
         :type select_cursor: SelectCursor object.
         """
         # Use return value of __call__ in a "with" statement like so.
+        outer_cursor = None
         with select_cursor() as cursor:
+            outer_cursor = cursor  # so we can test for closed when done
             rowset = cursor.fetchmany(arraysize)
             while rowset:
                 for row in rowset:
                     yield row
                 rowset = cursor.fetchmany(arraysize)
+        self.assertTrue(outer_cursor.closed)  # we are done
 
     def test_select_cursor(self):
         """ Create N rows, use SelectCursor and an external row generator.
@@ -163,4 +166,3 @@ class TestSelectCursor(PostgresTestCase):
                 (row_counter, "hello" + str(row_counter)))
             row_counter += 1
         self.assertEqual(row_counter, 10)
-

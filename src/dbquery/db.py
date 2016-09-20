@@ -78,6 +78,19 @@ class DB(object):
         """
         raise NotImplementedError()
 
+    def nonclosing_execute(self, sql, params, return_function=None):
+        """ Open or reuse a connection automatically, create a cursor and
+        execute the query then call produce_return to get a value to return.
+        Does not close cursor. It is up to implementor to close cursor outside
+        this function.
+
+        :type sql: str
+        :type params: [] or {}
+        :type return_function: None or function(cursor) -> response
+        :return: Result of the return_function.
+        """
+        raise NotImplementedError()
+
     def close(self):
         """ Close the connection so that another call to execute will
         trigger opening or reusing a new connection.

@@ -56,8 +56,6 @@ class PostgresDB(DB):
 
     @DB.connected
     def nonclosing_execute(self, sql, params, return_function=None):
-        """ Does not close cursor. Make sure that cursor is closed when done.
-        """
         cursor = self._connection.cursor()
         cursor.execute(sql, params)
         return cursor
