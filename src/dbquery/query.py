@@ -241,17 +241,21 @@ class SelectIterator(Select):
 
 
 class SelectCursor(Query):
-    """ Returns cursor context for external processing. Use "with" to ensure
-        closing of cursor.
+    """ Use when you need access to the cursor. Ensures closing.
     """
 
     def __init__(self, db, sql):
         super(SelectCursor, self).__init__(db, sql)
-        # Non-closing cursor execute function.
+        # Since we close cursor in __call__.
         self._execute_function = self._db.nonclosing_execute
 
     @contextmanager
     def __call__(self, *args, **kwds):
+        """ Creates a cursor with the provided sql, and returns it wrapped in
+        contextmanager for external processing. Use "with" to ensure closing of
+        cursor. See tests for a row generator example which could be passed to,
+        say, an http stream.
+        """
         cursor = super(SelectCursor, self).__call__(*args, **kwds)
         try:
             yield cursor

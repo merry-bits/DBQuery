@@ -126,12 +126,13 @@ class TestSelectIterator(PostgresTestCase):
 class TestSelectCursor(PostgresTestCase):
     """ Insert several items and test SelectCursor. """
 
-    def _row_generator(select_cursor, arraysize):
+    def _row_generator(self, select_cursor, arraysize):
         """ Yields individual rows until no more rows exist in query result.
-        :param select_cursor: Closeable cursor context delivering a psycopg2
-            cursor.
-        :type select_cursor: SelectCursor.
+        :param select_cursor: Object which delivers closeable psycopg2 cursor
+            context on call.
+        :type select_cursor: SelectCursor object.
         """
+        # Use return value of __call__ in a "with" statement like so.
         with select_cursor() as cursor:
             rowset = cursor.fetchmany(arraysize)
             while rowset:
@@ -150,7 +151,16 @@ class TestSelectCursor(PostgresTestCase):
             self.db.Manipulation(
                 "INSERT INTO test VALUES(%s, %s)")(str(i), test_value + str(i))
 
-
-        select = self.db.SelectGenerator(
+        select = self.db.SelectCursor(
             "SELECT * FROM test ORDER BY id")
-        # TODO: finish
+
+        row_generator = self._row_generator(select, 2)
+
+        row_counter = 0
+        for row in row_generator:
+            self.assertEqual(
+                row,
+                (row_counter, "hello" + str(row_counter)))
+            row_counter += 1
+        self.assertEqual(row_counter, 10)
+
