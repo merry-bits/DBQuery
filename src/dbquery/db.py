@@ -3,7 +3,8 @@ from functools import wraps
 from logging import getLogger
 
 from .log_msg import LogMsg
-from .query import Query, Select, SelectOne, SelectIterator, Manipulation
+from .query import Query, Select, SelectOne, SelectIterator, QueryCursor, \
+    Manipulation
 
 
 _LOG = getLogger(__name__)
@@ -56,6 +57,9 @@ class DB(object):
         return SelectIterator(
             self, sql, callback, cb_args, arraysize, row_formatter)
 
+    def QueryCursor(self, sql):
+        return QueryCursor(self, sql)
+
     def Manipulation(self, sql, rowcount=None):
         return Manipulation(self, sql, rowcount)
 
@@ -66,6 +70,19 @@ class DB(object):
     def execute(self, sql, params, produce_return):
         """ Open or reuse a connection automatically, create a cursor and
         execute the query then call produce_return to get a value to return.
+
+        :type sql: str
+        :type params: [] or {}
+        :type return_function: None or function(cursor) -> response
+        :return: Result of the return_function.
+        """
+        raise NotImplementedError()
+
+    def nonclosing_execute(self, sql, params, return_function=None):
+        """ Open or reuse a connection automatically, create a cursor and
+        execute the query, then return the cursor directly.nDoes not close
+        cursor. It is up to implementor to close cursor outside this function.
+        Use with care!
 
         :type sql: str
         :type params: [] or {}

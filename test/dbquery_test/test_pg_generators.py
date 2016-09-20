@@ -51,7 +51,7 @@ class PostgresTestCase(TestCase):
         self.db.close()
 
 
-class TestInsertMany(PostgresTestCase):
+class TestSelectIterator(PostgresTestCase):
     """ Insert several items and test SelectIterator. """
 
     def test_select_iterator(self):
@@ -121,3 +121,48 @@ class TestInsertMany(PostgresTestCase):
 
         sg = select()
         self.assertEqual(sg, None)
+
+
+class TestQueryCursor(PostgresTestCase):
+    """ Insert several items and test QueryCursor. """
+
+    def _row_generator(self, select_cursor, arraysize):
+        """ Yields individual rows until no more rows exist in query result.
+        :param select_cursor: Object which delivers closeable psycopg2 cursor
+            context on call.
+        :type select_cursor: QueryCursor object.
+        """
+        # Use return value of __call__ in a "with" statement like so.
+        outer_cursor = None
+        with select_cursor() as cursor:
+            outer_cursor = cursor  # so we can test for closed when done
+            rowset = cursor.fetchmany(arraysize)
+            while rowset:
+                for row in rowset:
+                    yield row
+                rowset = cursor.fetchmany(arraysize)
+        self.assertTrue(outer_cursor.closed)  # we are done
+
+    def test_query_cursor(self):
+        """ Create N rows, use QueryCursor and an external row generator.
+        """
+        N = 10
+        test_value = "hello"
+        self.db.Manipulation("CREATE TABLE test (id INTEGER, val VARCHAR)")()
+
+        for i in range(N):
+            self.db.Manipulation(
+                "INSERT INTO test VALUES(%s, %s)")(str(i), test_value + str(i))
+
+        select = self.db.QueryCursor(
+            "SELECT * FROM test ORDER BY id")
+
+        row_generator = self._row_generator(select, 2)
+
+        row_counter = 0
+        for row in row_generator:
+            self.assertEqual(
+                row,
+                (row_counter, "hello" + str(row_counter)))
+            row_counter += 1
+        self.assertEqual(row_counter, 10)

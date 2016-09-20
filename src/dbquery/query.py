@@ -4,7 +4,7 @@
 Simplify SQL execution, using a configured DB class.
 """
 from logging import getLogger
-
+from contextlib import contextmanager
 from .log_msg import LogMsg
 
 
@@ -54,6 +54,8 @@ class Query(object):
         # obtained by accessing the connection property.
         self.OperationalError = db.OperationalError
         self._connection = None
+        # Default cursor execute function.
+        self._execute_function = self._db.execute
 
     def _produce_return(self, cursor):
         """ Gets called with the cursor on which the query was executed.
@@ -88,7 +90,7 @@ class Query(object):
         while 1:  # either return or raise
             try:
                 # Execute and return.
-                return self._db.execute(
+                return self._execute_function(
                     self._sql, params, self._produce_return)
             except self._db.OperationalError:
                 # Usually means a connection problem, log and try to connect
@@ -232,9 +234,36 @@ class SelectIterator(Select):
 
     def _produce_return(self, cursor):
         """ Calls callback once with generator.
+            :rtype: None
         """
         self.callback(self._row_generator(cursor), *self.cb_args)
         return None
+
+
+class QueryCursor(Query):
+    """ Use when you need access to the cursor. Ensures closing.
+    """
+
+    def __init__(self, db, sql):
+        super(QueryCursor, self).__init__(db, sql)
+        # Since we close cursor in __call__.
+        self._execute_function = self._db.nonclosing_execute
+
+    @contextmanager
+    def __call__(self, *args, **kwds):
+        """ Creates a cursor with the provided sql, and returns it wrapped in
+        contextmanager for external processing. Use "with" to ensure closing of
+        cursor. See tests for a row generator example which could be passed to,
+        say, an http stream.
+        """
+        cursor = super(QueryCursor, self).__call__(*args, **kwds)
+        try:
+            yield cursor
+        finally:
+            try:
+                cursor.close()
+            except Exception:
+                _LOG.warning("Couldn't close cursor.", exc_info=True)
 
 
 class ManipulationCheckError(Exception):
