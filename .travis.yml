@@ -14,7 +14,6 @@ python:
 #  - "3.5-dev" # 3.5 development branch
 #  - "nightly" # currently points to 3.6-dev
 env:
-  - DBQUERY_POSTGRES_TEST=""
   - DBQUERY_POSTGRES_TEST="postgres://postgres:@localhost/travis_ci_test"
 cache:
   - pip

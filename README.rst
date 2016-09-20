@@ -137,6 +137,25 @@ Overwrite ``_produce_return`` if you are interested in creating your own class
 that does something with the cursor that executed the query.
 
 
+QueryCursor
+^^^^^^^^^^^
+
+Executes the given SQL then returns the curser for direct access. Use within
+a context. Exiting the context will close the cursor.
+
+For example perform a `fetchone`:
+
+.. code-block:: python
+
+    >>> get_first_name_cursor = db.QueryCursor(
+    ...     "SELECT first_name FROM users where id=?")
+    >>> with get_first_name_cursor(123) as cursor:
+    ...     print(cursor.fetchone())
+    ...
+    ('Foo',)
+    >>>
+
+
 Manipulation
 ^^^^^^^^^^^^
 
@@ -152,9 +171,12 @@ query:
 .. code-block:: python
 
     >>> update_user_name = db.Manipulation(
-    ...    "UPDTAE users SET name=%s WHERE id=%s", rowcount=1)
+    ...    "UPDATE users SET first_name=? WHERE id=?", rowcount=1)
     >>> with db:  # start a new transaction, does not work with SQLiteDB!
     ...    update_user_name("new_name", 123)  # roll back if rowcount != 1
+    ...
+    1
+    >>>
 
 
 Select
@@ -174,7 +196,9 @@ value will be returned:
 
     >>> get_first_name = db.SelectOne(
     ...     "SELECT first_name FROM users where id=?")
-    >>> first_name = get_first_name(123)
+    >>> get_first_name(123)
+    'Foo'
+    >>>
 
 
 SelectIterator
@@ -198,11 +222,22 @@ needed.
     >>> get_first_names = db.SelectIterator(
     ...     "SELECT first_name FROM users", callback)
     >>> get_first_names()
+    ('Foo',)
+    >>>
+
 
 Changelog
 =========
 
-v0.4
-----
 
-* Added SelectIterator
+v0.4.1
+------
+
+* Added `SelectIterator` iteration `QueryCursor` which allows direct cursor
+  access
+
+
+v0.4.0
+------
+
+* Added `SelectIterator`

@@ -125,6 +125,32 @@ class Query(object):
         return self._db.show(self._sql, arg)
 
 
+class QueryCursor(Query):
+    """ Use when you need access to the cursor. Ensures closing.
+    """
+
+    def __init__(self, db, sql):
+        super(QueryCursor, self).__init__(db, sql)
+        # Since we close cursor in __call__.
+        self._execute_function = self._db.nonclosing_execute
+
+    @contextmanager
+    def __call__(self, *args, **kwds):
+        """ Creates a cursor, executes the provided SQL, and returns the cursor
+        wrapped in context manager for external processing. Use "with" to
+        ensure closing of cursor. See tests for a row generator example which
+        could be passed to, say, an HTTP stream.
+        """
+        cursor = super(QueryCursor, self).__call__(*args, **kwds)
+        try:
+            yield cursor
+        finally:
+            try:
+                cursor.close()
+            except Exception:
+                _LOG.warning("Couldn't close cursor.", exc_info=True)
+
+
 class Select(Query):
     """ Useful for executing SELECT statements.
 
@@ -219,7 +245,7 @@ class SelectIterator(Select):
             self._arraysize = 1  # same as psycopg2 default
 
         self.callback = callback
-        self.cb_args = cb_args
+        self.cb_args = cb_args or []
 
     def _row_generator(self, cursor):
         """ Yields individual rows until no more rows
@@ -239,32 +265,6 @@ class SelectIterator(Select):
         """
         self.callback(self._row_generator(cursor), *self.cb_args)
         return None
-
-
-class QueryCursor(Query):
-    """ Use when you need access to the cursor. Ensures closing.
-    """
-
-    def __init__(self, db, sql):
-        super(QueryCursor, self).__init__(db, sql)
-        # Since we close cursor in __call__.
-        self._execute_function = self._db.nonclosing_execute
-
-    @contextmanager
-    def __call__(self, *args, **kwds):
-        """ Creates a cursor with the provided sql, and returns it wrapped in
-        contextmanager for external processing. Use "with" to ensure closing of
-        cursor. See tests for a row generator example which could be passed to,
-        say, an http stream.
-        """
-        cursor = super(QueryCursor, self).__call__(*args, **kwds)
-        try:
-            yield cursor
-        finally:
-            try:
-                cursor.close()
-            except Exception:
-                _LOG.warning("Couldn't close cursor.", exc_info=True)
 
 
 class ManipulationCheckError(Exception):
