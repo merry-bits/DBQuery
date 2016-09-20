@@ -15,7 +15,9 @@ python:
 #  - "nightly" # currently points to 3.6-dev
 env:
   - DBQUERY_POSTGRES_TEST=""
-  - DBQUERY_POSTGRES_TEST="postgers://postgres:@localhost/travis_ci_test"
+  - DBQUERY_POSTGRES_TEST="postgres://postgres:@localhost/travis_ci_test"
+cache:
+  - pip
 # command to install dependencies
 install: "pip install -r test_requirements.txt"
 # command to run tests
